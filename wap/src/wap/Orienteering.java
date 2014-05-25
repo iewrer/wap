@@ -1,4 +1,4 @@
-package wap;
+package jp.co.worksap.y2014.orienteering;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +36,7 @@ public class Orienteering {
 			this.height = height;
 			this.width = width;
 			block = new char[height][width];
-			waypoints = new ArrayList<>();
+			waypoints = new ArrayList<Point>();
 		}
 		
 		boolean isOpen(int r, int c) {
@@ -58,15 +58,17 @@ public class Orienteering {
 	
 	private static SearchParam params = new SearchParam();
 	public static final int UNREACHABLE = -1;
-	private static final String INPUT_FILE_NAME = "./data/map/g2.txt";
+	private static final String INPUT_FILE_NAME = "./data/map/g1.txt";
 	
 	public static void main(String[] args) throws IOException {
 		Map m = loadMap();
+		long start = System.currentTimeMillis();
 		int[][] dist = reduction(m);
 		int result = tsp(dist, m.waypoints.size());
 		System.out.println(result);
+		System.out.println("time = " + (System.currentTimeMillis() - start) + "ms");
 	}
-
+    
 	private static int tsp(int[][] dist, int n) {
 		int[] minOutEdge = new int[n];
 		for (int i = 0; i < n; i++) {
@@ -77,6 +79,9 @@ public class Orienteering {
 				}
 			}
 			minOutEdge[i] = min;
+			// quick judge
+			if (min == Integer.MAX_VALUE)
+				return UNREACHABLE;
 		}
 		int[] pending = new int[n - 2];
 		for (int i = 2; i < n; i++) {
@@ -98,19 +103,14 @@ public class Orienteering {
 		else
 			return UNREACHABLE;
 	}
-
+    
 	/**
 	 * return the remaining minimal cost
-	 * @param pending, excluding src and dst
-	 * @param remains
-	 * @param dist
-	 * @param minOutEdge 
-	 * @param n
 	 * @param now
-	 * @param pending 
-	 * @param left 
-	 * @param dst
-	 * @return
+	 * @param cost
+	 * @param minsum
+	 * @param left
+	 * @param pending, excluding src and dst
 	 */
 	private static void search(int now, int cost, int minsum, int left, int[] pending) {
 		if (minsum + cost < params.best) {
@@ -128,9 +128,9 @@ public class Orienteering {
 					}
 				}
 			}
-		} 
+		}
 	}
-
+    
 	private static int[][] reduction(Map m) {
 		int n = m.waypoints.size();
 		int[][] dist = new int[n][n];
@@ -144,12 +144,12 @@ public class Orienteering {
 		}
 		return dist;
 	}
-
+    
 	private static int[][] calcDistance(Map m, Point p) {
 		final int DIRS = 4;
 		final int[] DR = new int[] {-1, 0, 1, 0};
 		final int[] DC = new int[] {0, 1, 0, -1};
-
+        
 		int[][] td = new int[m.height][m.width];
 		for (int i = 0; i < m.height; i ++) {
 			for (int j = 0; j < m.width; j++) {
@@ -157,9 +157,9 @@ public class Orienteering {
 			}
 		}
 		td[p.r][p.c] = 0;
-		Queue<Point> pending = new LinkedList<>();
+		Queue<Point> pending = new LinkedList<Point>();
 		pending.add(p);
-
+        
 		while (pending.size() > 0) {
 			Point now = pending.poll();
 			int base = td[now.r][now.c];
@@ -175,7 +175,7 @@ public class Orienteering {
 		
 		return td;
 	}
-
+    
 	private static Map loadMap() throws IOException {
 		File file = new File(INPUT_FILE_NAME);
 		Scanner scanner = new Scanner(new FileInputStream(file));
@@ -183,7 +183,7 @@ public class Orienteering {
 		int height = scanner.nextInt();
 		scanner.nextLine();
 		Map map = new Map(height, width);
-		List<Point> wp = new ArrayList<>();
+		List<Point> wp = new ArrayList<Point>();
 		for (int i = 0; i < height; i ++) {
 			String line = scanner.nextLine();
 			for (int j = 0; j < width; j ++) {
