@@ -58,7 +58,7 @@ public class Orienteering {
 	
 	private static SearchParam params = new SearchParam();
 	public static final int UNREACHABLE = -1;
-	private static final String INPUT_FILE_NAME = "./data/map/g1.txt";
+	private static final String INPUT_FILE_NAME = "./data/map/g7.txt";
 	
 	public static void main(String[] args) throws IOException {
 		Map m = loadMap();
@@ -66,10 +66,17 @@ public class Orienteering {
 		int[][] dist = reduction(m);
 		int result = tsp(dist, m.waypoints.size());
 		System.out.println(result);
-		System.out.println("time = " + (System.currentTimeMillis() - start) + "ms");
+		System.out.println("time=" + (System.currentTimeMillis() - start) + "ms");
 	}
     
 	private static int tsp(int[][] dist, int n) {
+		// quick judge
+		for (int i = 1; i < n; i++) {
+			if (dist[0][i] == Integer.MAX_VALUE)
+				return UNREACHABLE;
+		}
+		// otherwise, there is at least one solution,
+		// i.e., dist[i][j] < Integer.MAX_VALUE for all i, j
 		int[] minOutEdge = new int[n];
 		for (int i = 0; i < n; i++) {
 			int min = Integer.MAX_VALUE;
@@ -79,16 +86,13 @@ public class Orienteering {
 				}
 			}
 			minOutEdge[i] = min;
-			// quick judge
-			if (min == Integer.MAX_VALUE)
-				return UNREACHABLE;
 		}
 		int[] pending = new int[n - 2];
 		for (int i = 2; i < n; i++) {
 			pending[i - 2] = i;
 		}
-		int minsum = 0;
-		for (int i = 0; i + 1 < n; i++) {
+		int minsum = minOutEdge[0];
+		for (int i = 2; i < n; i++) {
 			// excluding the destination
 			minsum += minOutEdge[i];
 		}
@@ -106,18 +110,21 @@ public class Orienteering {
     
 	/**
 	 * return the remaining minimal cost
-	 * @param now
-	 * @param cost
-	 * @param minsum
-	 * @param left
 	 * @param pending, excluding src and dst
+	 * @param remains
+	 * @param dist
+	 * @param minOutEdge
+	 * @param n
+	 * @param now
+	 * @param pending
+	 * @param left
+	 * @param dst
+	 * @return
 	 */
 	private static void search(int now, int cost, int minsum, int left, int[] pending) {
-		if (minsum + cost < params.best) {
+		if (cost + minsum < params.best && cost + params.dist[now][params.dst] < params.best) {
 			if (left == 0) {
-				if (cost + params.dist[now][params.dst] < params.best) {
-					params.best = cost + params.dist[now][params.dst];
-				}
+				params.best = cost + params.dist[now][params.dst];
 			} else {
 				for (int i = 0; i < left; i++) {
 					int next = pending[i];
